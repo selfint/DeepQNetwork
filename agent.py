@@ -31,12 +31,12 @@ class Agent:
         self.network = self.build_model()
 
         # q learning parameters
-        self.epsilon = epsilon_max
         self.epsilon_max = epsilon_max
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
         self.discount_rate = discount_rate
         self.epsilon_counter = 1
+        self.epsilon = self.epsilon_min + (self.epsilon_max - self.epsilon_min) * np.exp(-self.epsilon_decay * self.epsilon_counter)
 
         # experience replay
         self.experience_replay_reel = deque(maxlen=experience_replay_size)
@@ -76,27 +76,34 @@ class Agent:
         else:
             action = np.argmax(self.network.predict(state))
 
+        # decay epsilon
+        self.epsilon = self.epsilon_min + (self.epsilon_max - self.epsilon_min) * np.exp(-self.epsilon_decay * self.epsilon_counter)
+
     def experience_replay(self):
-        """learns from past states and updates the network
+        """trains the network to predict the max reward in the next state for each action possible
         """
         if len(self.experience_replay_reel) < self.experience_replay_train:
             return
 
         # randomly select frames to train on
-        x_train = [state for (state, _, _, _) in random.sample(self.experience_replay_reel, self.experience_replay_train)]
+        replay_frames = random.sample(self.experience_replay_reel, self.experience_replay_train)
+        x_train = np.array([state[0] for (state, _, _, _) in replay_frames])
 
         # set the target values to predict the max reward possible after each reward
         # set negative reward for terminal states
-        y_train = [reward + self.discount_rate * np.max(self.network.predict(next_state)) if next_state is not None
-                    else -1.0 + self.discount_rate * np.max(self.network.predict(next_state))
-                    for (state, action, reward, next_state) in x_train]
+        y_train = []
+        for (state, action, reward, next_state) in replay_frames:
+            y_row = np.zeros(self.action_space)
+            max_q_value = np.max(self.network.predict(next_state))
+            y_row[action] = self.discount_rate * max_q_value
+            y_row[action] += -1.0 if next_state is None else reward
+            y_train.append(y_row)
+        y_train = np.array(y_train)
         
         # train model
-        # self.network.fit(x_train, y_train)
-        
+        self.network.fit(x_train, y_train, verbose=0)
 
-
-    def remember(self, state: np.array, action: int, reward: float, next_state: np.array):
+    def remember(self, state: np.array, action: int, reward: float, next_state: np.array, done: bool):
         """adds a tuple contain a state-action and their following reward and next state
         
         Arguments:
@@ -104,16 +111,17 @@ class Agent:
             action {int} -- action agent took in state 'state'
             reward {float} -- reward agent recieved for action 'action' in state 'state'
             next_state {np.array} -- state agent was in after taking action 'action' from state 'state'
+            done {bool} - is the state terminal or not
         """
-        self.experience_replay_reel.append(ReplayFrame(state, action, reward, next_state))
+        self.experience_replay_reel.append(ReplayFrame(state, action, reward, None if done else next_state))
 
 
 if __name__ == "__main__":
     test_agent = Agent(2, 2, 1.0, 0.01, 0.001, 0.99, 2, 2)
     s = np.array([[1, 2]])
-    test_agent.remember(s, 1, 1, s)
-    test_agent.remember(s, 1, 1, s)
-    test_agent.remember(s, 1, 1, s)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
     test_agent.experience_replay()
 
 
