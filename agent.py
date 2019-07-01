@@ -53,7 +53,7 @@ class Agent:
             Sequential -- compiled model
         """
         model = Sequential()
-        model.add(Dense(24, input_dim=self.observation_space, activation='relu', loss='mse'))
+        model.add(Dense(24, input_dim=self.observation_space, activation='relu'))
         model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_space, activation='linear'))
         model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
@@ -130,5 +130,9 @@ if __name__ == "__main__":
     test_agent.remember(s, 1, 1, s, False)
     test_agent.remember(s, 1, 1, s, True)
     test_agent.experience_replay()
+    test_agent.choose_action(s)
+    test_agent.choose_action(s)
+    test_agent.choose_action(s)
+    print(test_agent.epsilon)
 
 
