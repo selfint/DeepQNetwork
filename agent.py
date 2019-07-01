@@ -5,7 +5,7 @@ from collections import deque, namedtuple
 import random
 
 
-ReplayFrame = namedtuple('ReplayFrame', 'state action reward next_state')
+ReplayFrame = namedtuple('ReplayFrame', 'state action reward next_state terminal')
 
 
 class Agent:
@@ -53,7 +53,7 @@ class Agent:
             Sequential -- compiled model
         """
         model = Sequential()
-        model.add(Dense(24, input_dim=self.observation_space, activation='relu'))
+        model.add(Dense(24, input_dim=self.observation_space, activation='relu', loss='mse'))
         model.add(Dense(24, activation='relu'))
         model.add(Dense(self.action_space, activation='linear'))
         model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
@@ -87,16 +87,16 @@ class Agent:
 
         # randomly select frames to train on
         replay_frames = random.sample(self.experience_replay_reel, self.experience_replay_train)
-        x_train = np.array([state[0] for (state, _, _, _) in replay_frames])
+        x_train = np.array([state[0] for (state, _, _, _, _) in replay_frames])
 
         # set the target values to predict the max reward possible after each reward
         # set negative reward for terminal states
         y_train = []
-        for (state, action, reward, next_state) in replay_frames:
+        for (state, action, reward, next_state, terminal) in replay_frames:
             y_row = np.zeros(self.action_space)
             max_q_value = np.max(self.network.predict(next_state))
             y_row[action] = self.discount_rate * max_q_value
-            y_row[action] += -1.0 if next_state is None else reward
+            y_row[action] += -1.0 if terminal else reward
             y_train.append(y_row)
         y_train = np.array(y_train)
         
@@ -113,15 +113,22 @@ class Agent:
             next_state {np.array} -- state agent was in after taking action 'action' from state 'state'
             done {bool} - is the state terminal or not
         """
-        self.experience_replay_reel.append(ReplayFrame(state, action, reward, None if done else next_state))
+        self.experience_replay_reel.append(ReplayFrame(state, action, reward, next_state, done))
 
 
 if __name__ == "__main__":
-    test_agent = Agent(2, 2, 1.0, 0.01, 0.001, 0.99, 2, 2)
+    test_agent = Agent(2, 2, 1.0, 0.01, 0.001, 0.99, 4, 2)
     s = np.array([[1, 2]])
     test_agent.remember(s, 1, 1, s, False)
     test_agent.remember(s, 1, 1, s, False)
     test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, False)
+    test_agent.remember(s, 1, 1, s, True)
     test_agent.experience_replay()
 
 
