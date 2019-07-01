@@ -78,6 +78,9 @@ class Agent:
 
         # decay epsilon
         self.epsilon = self.epsilon_min + (self.epsilon_max - self.epsilon_min) * np.exp(-self.epsilon_decay * self.epsilon_counter)
+        self.epsilon_counter += 1
+
+        return action
 
     def experience_replay(self):
         """trains the network to predict the max reward in the next state for each action possible
@@ -94,9 +97,8 @@ class Agent:
         y_train = []
         for (state, action, reward, next_state, terminal) in replay_frames:
             y_row = np.zeros(self.action_space)
-            max_q_value = np.max(self.network.predict(next_state))
-            y_row[action] = self.discount_rate * max_q_value
-            y_row[action] += -1.0 if terminal else reward
+            max_q_value = np.max(self.network.predict(next_state)) if not terminal else -1.0
+            y_row[action] = self.discount_rate * max_q_value + reward
             y_train.append(y_row)
         y_train = np.array(y_train)
         
@@ -113,7 +115,7 @@ class Agent:
             next_state {np.array} -- state agent was in after taking action 'action' from state 'state'
             done {bool} - is the state terminal or not
         """
-        self.experience_replay_reel.append(ReplayFrame(state, action, reward, next_state, done))
+        self.experience_replay_reel.append(ReplayFrame(np.array(state), action, reward, np.array(next_state), done))
 
 
 if __name__ == "__main__":
