@@ -96,7 +96,8 @@ class Agent:
         # set negative reward for terminal states
         y_train = []
         for (state, action, reward, next_state, terminal) in replay_frames:
-            y_row = np.zeros(self.action_space)
+            # y_row = np.zeros(self.action_space)
+            y_row = self.network.predict(state)[0]
             max_q_value = np.max(self.network.predict(next_state)) if not terminal else -1.0
             y_row[action] = self.discount_rate * max_q_value + reward
             y_train.append(y_row)
