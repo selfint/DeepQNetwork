@@ -9,13 +9,13 @@ import numpy as np
 # constants
 # ENVIRONMENT = 'Pendulum-v0'
 ENVIRONMENT = 'CartPole-v1'
-EPISODES = 200
+EPISODES = 100
 EPSILON_MAX = 1.0
 EPSILON_MIN = 0.01
-EPSILON_DECAY = 0.0005
+EPSILON_DECAY = 0.001
 DISCOUNT_RATE = 0.999
-EXPERIENCE_REPLAY_SIZE = 2000
-EXPERIENCE_REPLAY_TRAIN = 20
+EXPERIENCE_REPLAY_SIZE = 10000
+EXPERIENCE_REPLAY_TRAIN = 50
 
 
 # build env and get observation and action space size
@@ -52,6 +52,10 @@ for epoch in range(EPISODES):
     # play episode
     episode_reward = 0
     for frame in count():
+
+        # render last 50 episodes for fun
+        if epoch > EPISODES - 50:
+            env.render()
         
         # let agent take action
         action = agent.choose_action(pre_process(state))
@@ -73,13 +77,14 @@ for epoch in range(EPISODES):
             state = env.reset()
             rewards.append(episode_reward)
             epsilons.append(agent.epsilon * 100)
-            print(epoch, episode_reward)
+            print(epoch, episode_reward, agent.epsilon)
             episode_reward = 0
             break
 env.close()
 
 # plot rewards
 fig, ax = plt.subplots()
+ax.plot([np.average(rewards[-i:-1]) for i in range(len(rewards))])
 ax.plot(rewards)
 ax.plot(epsilons)
 
