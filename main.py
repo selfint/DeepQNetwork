@@ -13,9 +13,9 @@ EPISODES = 100
 EPSILON_MAX = 1.0
 EPSILON_MIN = 0.0
 EPSILON_DECAY = 0.0014
-DISCOUNT_RATE = 0.9
+DISCOUNT_RATE = 0.999
 EXPERIENCE_REPLAY_SIZE = 10000
-EXPERIENCE_REPLAY_TRAIN = 50
+EXPERIENCE_REPLAY_TRAIN = 200
 
 
 # build env and get observation and action space size
@@ -67,6 +67,7 @@ for epoch in range(EPISODES):
         # update state
         state = next_state
 
+        # accumulate episode reward
         episode_reward += reward
 
         # update agent's Q-network
