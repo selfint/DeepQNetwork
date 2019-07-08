@@ -1,7 +1,7 @@
+from collections import deque, namedtuple
 from keras.models import Sequential
 from keras.layers import Dense
 import numpy as np
-from collections import deque, namedtuple
 import random
 
 
@@ -137,5 +137,3 @@ if __name__ == "__main__":
     test_agent.choose_action(s)
     test_agent.choose_action(s)
     print(test_agent.epsilon)
-
-
